@@ -1,30 +1,22 @@
 @echo off
-setlocal
-
-REM Luo virtuaaliympäristö, jos ei ole
-if not exist venv (
-    python -m venv venv
-)
-
-REM Aktivoi venv
+echo Activating virtual environment...
 call venv\Scripts\activate
 
-REM Asenna riippuvuudet
-pip install --upgrade pip
+echo Installing dependencies...
 pip install -r requirements.txt
 
-REM Käynnistä palvelin taustalle
-start "" /B python demoapp\server.py
+echo Starting demo server...
+start /B python demoapp\server.py
 
-REM Odota hetki että palvelin ehtii käynnistyä
-timeout /t 5 > nul
+timeout /t 5
 
-REM Aja testit
+echo Running tests...
 robot login_tests
 
-REM Sammuta taustalla oleva palvelin
-for /f "tokens=2" %%a in ('tasklist ^| findstr "python.exe"') do (
-    taskkill /PID %%a /F > nul
+echo Killing demo server...
+for /f "tokens=2 delims=," %%a in ('powershell -Command "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*demoapp\\server.py*' } | ForEach-Object { $_.ProcessId }"') do (
+    echo Terminating process ID %%a
+    taskkill /PID %%a /F
 )
 
-exit /B 0
+echo Done!
